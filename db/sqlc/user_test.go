@@ -231,8 +231,8 @@ func TestUpdateUser(t *testing.T) {
 
 	arg := UpdateUserParams{
 		ID:               1,
-		FullName:         "Alice Smith",
-		Email:            "alice@example.com",
+		FullName:         "Boris Smith",
+		Email:            "boris@example.com",
 		Role:             "user",
 		RegistrationDate: time.Now(),
 	}
