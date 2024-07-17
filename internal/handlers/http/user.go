@@ -8,7 +8,6 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
-	// "github.com/go-chi/render"
 	"project-management-service/db/sqlc"
 	"project-management-service/pkg/server/response"
 )
@@ -19,7 +18,7 @@ type UserHandler struct {
 
 func NewUserHandler(conn *sql.DB) *UserHandler {
 	return &UserHandler{
-		db: db.New(conn), // Use the correct constructor from your db package
+		db: db.New(conn),
 	}
 }
 
@@ -38,8 +37,13 @@ func (h *UserHandler) Routes() chi.Router {
 	return r
 }
 
-// list, add, get, update, and delete functions stay the same...
-
+// @Summary	List of users from the repository
+// @Tags		users
+// @Accept		json
+// @Produce	json
+// @Success	200	{array}		db.User
+// @Failure	500	{object}	response.Object
+// @Router		/users [get]
 func (h *UserHandler) list(w http.ResponseWriter, r *http.Request) {
 	users, err := h.db.ListUsers(r.Context())
 	if err != nil {
@@ -49,6 +53,15 @@ func (h *UserHandler) list(w http.ResponseWriter, r *http.Request) {
 	response.OK(w, r, users)
 }
 
+// @Summary	Add a new user to the repository
+// @Tags		users
+// @Accept		json
+// @Produce	json
+// @Param		request	body		db.CreateUserParams	true	"User details"
+// @Success	200		{object}	db.User
+// @Failure	400		{object}	response.Object
+// @Failure	500		{object}	response.Object
+// @Router		/users [post]
 func (h *UserHandler) add(w http.ResponseWriter, r *http.Request) {
 	var req db.CreateUserParams
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -65,6 +78,15 @@ func (h *UserHandler) add(w http.ResponseWriter, r *http.Request) {
 	response.OK(w, r, user)
 }
 
+// @Summary	Get a user from the repository
+// @Tags		users
+// @Accept		json
+// @Produce	json
+// @Param		id	path		int	true	"User ID"
+// @Success	200	{object}	db.User
+// @Failure	404	{object}	response.Object
+// @Failure	500	{object}	response.Object
+// @Router		/users/{id} [get]
 func (h *UserHandler) get(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err != nil {
@@ -85,6 +107,17 @@ func (h *UserHandler) get(w http.ResponseWriter, r *http.Request) {
 	response.OK(w, r, user)
 }
 
+// @Summary	Update a user in the repository
+// @Tags		users
+// @Accept		json
+// @Produce	json
+// @Param		id		path		int					true	"User ID"
+// @Param		request	body		db.UpdateUserParams	true	"User details"
+// @Success	200		{object}	db.User
+// @Failure	400		{object}	response.Object
+// @Failure	404		{object}	response.Object
+// @Failure	500		{object}	response.Object
+// @Router		/users/{id} [put]
 func (h *UserHandler) update(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err != nil {
@@ -113,6 +146,15 @@ func (h *UserHandler) update(w http.ResponseWriter, r *http.Request) {
 	response.OK(w, r, user)
 }
 
+// @Summary	Delete a user from the repository
+// @Tags		users
+// @Accept		json
+// @Produce	json
+// @Param		id	path		int	true	"User ID"
+// @Success	204	{object}	response.Object
+// @Failure	404	{object}	response.Object
+// @Failure	500	{object}	response.Object
+// @Router		/users/{id} [delete]
 func (h *UserHandler) delete(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err != nil {

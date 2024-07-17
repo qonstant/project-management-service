@@ -37,6 +37,13 @@ func (h *ProjectHandler) Routes() chi.Router {
 	return r
 }
 
+// @Summary	List of projects from the repository
+// @Tags		projects
+// @Accept		json
+// @Produce	json
+// @Success	200	{array}		db.Project
+// @Failure	500	{object}	response.Object
+// @Router		/projects [get]
 func (h *ProjectHandler) list(w http.ResponseWriter, r *http.Request) {
 	projects, err := h.db.ListProjects(r.Context())
 	if err != nil {
@@ -46,6 +53,15 @@ func (h *ProjectHandler) list(w http.ResponseWriter, r *http.Request) {
 	response.OK(w, r, projects)
 }
 
+// @Summary	Add a new project to the repository
+// @Tags		projects
+// @Accept		json
+// @Produce	json
+// @Param		request	body	db.CreateProjectParams	true	"Project details"
+// @Success	200		{object}	db.Project
+// @Failure	400		{object}	response.Object
+// @Failure	500		{object}	response.Object
+// @Router		/projects [post]
 func (h *ProjectHandler) add(w http.ResponseWriter, r *http.Request) {
 	var req db.CreateProjectParams
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -62,6 +78,15 @@ func (h *ProjectHandler) add(w http.ResponseWriter, r *http.Request) {
 	response.OK(w, r, project)
 }
 
+// @Summary	Get a project from the repository
+// @Tags		projects
+// @Accept		json
+// @Produce	json
+// @Param		id	path		int	true	"Project ID"
+// @Success	200	{object}	db.Project
+// @Failure	404	{object}	response.Object
+// @Failure	500	{object}	response.Object
+// @Router		/projects/{id} [get]
 func (h *ProjectHandler) get(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err != nil {
@@ -82,6 +107,17 @@ func (h *ProjectHandler) get(w http.ResponseWriter, r *http.Request) {
 	response.OK(w, r, project)
 }
 
+// @Summary	Update a project in the repository
+// @Tags		projects
+// @Accept		json
+// @Produce	json
+// @Param		id		path		int						true	"Project ID"
+// @Param		request	body		db.UpdateProjectParams	true	"Project details"
+// @Success	200		{object}	db.Project
+// @Failure	400		{object}	response.Object
+// @Failure	404		{object}	response.Object
+// @Failure	500		{object}	response.Object
+// @Router		/projects/{id} [put]
 func (h *ProjectHandler) update(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err != nil {
@@ -110,6 +146,15 @@ func (h *ProjectHandler) update(w http.ResponseWriter, r *http.Request) {
 	response.OK(w, r, project)
 }
 
+// @Summary	Delete a project from the repository
+// @Tags		projects
+// @Accept		json
+// @Produce	json
+// @Param		id	path		int	true	"Project ID"
+// @Success	204	{object}	response.Object
+// @Failure	404	{object}	response.Object
+// @Failure	500	{object}	response.Object
+// @Router		/projects/{id} [delete]
 func (h *ProjectHandler) delete(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err != nil {

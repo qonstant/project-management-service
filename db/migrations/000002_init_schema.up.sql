@@ -4,7 +4,7 @@ CREATE TABLE "projects" (
   "description" text NOT NULL,
   "start_date" timestamp NOT NULL,
   "end_date" timestamp NOT NULL,
-  "manager_id" BIGINT NOT NULL  -- Change from BIGSERIAL to BIGINT
+  "manager_id" BIGINT NOT NULL
 );
 
 CREATE TABLE "tasks" (
@@ -13,8 +13,8 @@ CREATE TABLE "tasks" (
   "description" text NOT NULL,
   "priority" task_priority NOT NULL,
   "status" task_status NOT NULL,
-  "assignee_id" BIGINT NOT NULL,  -- Change from BIGSERIAL to BIGINT
-  "project_id" BIGINT NOT NULL,    -- Change from BIGSERIAL to BIGINT
+  "assignee_id" BIGINT NOT NULL,
+  "project_id" BIGINT NOT NULL,
   "creation_date" timestamp NOT NULL DEFAULT (now()),
   "completion_date" timestamp
 );

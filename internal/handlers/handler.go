@@ -46,6 +46,11 @@ func New(d Dependencies, configs ...Configuration) (h *Handler, err error) {
 	return
 }
 
+// @title Project Management Service
+// @version 1.0
+// @description This is simple Project Management Service
+
+
 // WithHTTPHandler applies an HTTP handler to the Handler
 func WithHTTPHandler() Configuration {
 	return func(h *Handler) error {
