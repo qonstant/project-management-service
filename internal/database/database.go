@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"project-management-service/util"
+	"project-management-service/internal/config"
 
 	_ "github.com/lib/pq"
 	"github.com/golang-migrate/migrate/v4"
@@ -23,7 +23,7 @@ func InitDB() {
 	var err error
 
 	// Load configuration
-	config, err := util.LoadConfig(".")
+	config, err := config.LoadConfig(".")
 	if err != nil {
 		log.Fatalf("Error loading config: %v", err)
 	}

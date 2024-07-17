@@ -1,4 +1,4 @@
-package util
+package config
 
 import (
 	"time"
@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-// Congiguratoins fo the application
+// Configurations for the application
 // Values begin read by viper from env file
 type Config struct {
 	DBDriver            string        `mapstructure:"DB_DRIVER"`
@@ -14,6 +14,7 @@ type Config struct {
 	ServerAddress       string        `mapstructure:"SERVER_ADDRESS"`
 	TokenSymmetricKey   string        `mapstructure:"TOKEN_SYMMETRIC_KEY"`
 	AccessTokenDuration time.Duration `mapstructure:"ACCESS_TOKEN_DURATION"`
+	BaseURL             string        `mapstructure:"BASE_URL"`
 }
 
 func LoadConfig(path string) (config Config, err error) {

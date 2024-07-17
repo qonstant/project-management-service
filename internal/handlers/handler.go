@@ -1,69 +1,90 @@
 package handler
 
-// import (
-// 	"github.com/go-chi/chi/v5"
-// 	"github.com/go-chi/chi/v5/middleware"
-// 	httpSwagger "github.com/swaggo/http-swagger"
-// 	"project-management/internal/config"
-// 	"project-management/internal/handler/http"
-// 	"project-management/internal/service/project"
-// 	"project-management/internal/service/task"
-// 	"project-management/internal/service/user"
-// )
+import (
+	"database/sql"
+	"os"
+	"time"
+	"github.com/go-chi/chi/v5"
+	_ "github.com/go-chi/chi/v5/middleware"
+	httpSwagger "github.com/swaggo/http-swagger"
+	"github.com/hellofresh/health-go/v5"
+	healthPg "github.com/hellofresh/health-go/v5/checks/postgres"
 
-// type Dependencies struct {
-// 	Configs        config.Configs
-// 	UserService    *user.Service
-// 	TaskService    *task.Service
-// 	ProjectService *project.Service
-// }
+	"project-management-service/docs"
+	"project-management-service/internal/config"
+	"project-management-service/internal/handlers/http"
+)
 
-// // Configuration is an alias for a function that will take in a pointer to a Handler and modify it
-// type Configuration func(h *Handler) error
+type Dependencies struct {
+	DB      *sql.DB
+	Configs config.Config
+}
 
-// // Handler is an implementation of the Handler
-// type Handler struct {
-// 	dependencies Dependencies
-// 	HTTP         *chi.Mux
-// }
+// Configuration is an alias for a function that modifies the Handler
+type Configuration func(h *Handler) error
 
-// // New takes a variable amount of Configuration functions and returns a new Handler
-// func New(d Dependencies, configs ...Configuration) (h *Handler, err error) {
-// 	h = &Handler{dependencies: d}
-// 	for _, cfg := range configs {
-// 		if err = cfg(h); err != nil {
-// 			return nil, err
-// 		}
-// 	}
-// 	return h, nil
-// }
+// Handler is an implementation of the Handler
+type Handler struct {
+	dependencies Dependencies
+	HTTP         *chi.Mux
+}
 
-// // WithHTTPHandler applies an HTTP handler to the Handler
-// func WithHTTPHandler() Configuration {
-// 	return func(h *Handler) error {
-// 		// Create the HTTP router
-// 		h.HTTP = chi.NewRouter()
+// New creates a new Handler
+func New(d Dependencies, configs ...Configuration) (h *Handler, err error) {
+	// Create the handler
+	h = &Handler{
+		dependencies: d,
+	}
 
-// 		// Apply middleware
-// 		h.HTTP.Use(middleware.Logger)
-// 		h.HTTP.Use(middleware.Recoverer)
-// 		h.HTTP.Use(middleware.Timeout(h.dependencies.Configs.APP.Timeout))
+	// Apply all Configurations passed in
+	for _, cfg := range configs {
+		if err = cfg(h); err != nil {
+			return
+		}
+	}
 
-// 		// Swagger documentation endpoint
-// 		h.HTTP.Get("/swagger/*", httpSwagger.WrapHandler)
+	return
+}
 
-// 		// Initialize service handlers
-// 		userHandler := http.NewUserHandler(h.dependencies.UserService)
-// 		taskHandler := http.NewTaskHandler(h.dependencies.TaskService)
-// 		projectHandler := http.NewProjectHandler(h.dependencies.ProjectService)
+// WithHTTPHandler applies an HTTP handler to the Handler
+func WithHTTPHandler() Configuration {
+	return func(h *Handler) error {
+		// Create the HTTP handler
+		h.HTTP = chi.NewRouter()
 
-// 		// Register routes
-// 		h.HTTP.Route("/", func(r chi.Router) {
-// 			r.Mount("/users", userHandler.Routes())
-// 			r.Mount("/tasks", taskHandler.Routes())
-// 			r.Mount("/projects", projectHandler.Routes())
-// 		})
+		// Init swagger handler
+		docs.SwaggerInfo.BasePath = h.dependencies.Configs.BaseURL
+		h.HTTP.Get("/swagger/*", httpSwagger.WrapHandler)
 
-// 		return nil
-// 	}
-// }
+		// Init service handlers
+		userHandler := http.NewUserHandler(h.dependencies.DB)
+		projectHandler := http.NewProjectHandler(h.dependencies.DB)
+		taskHandler := http.NewTaskHandler(h.dependencies.DB)
+
+		h.HTTP.Route("/", func(r chi.Router) {
+			r.Mount("/users", userHandler.Routes())
+			r.Mount("/projects", projectHandler.Routes())
+			r.Mount("/tasks", taskHandler.Routes())
+		})
+
+		// Set up health checks
+		healthHandler, _ := health.New(health.WithComponent(health.Component{
+			Name:    "project-management-service",
+			Version: "v1.0",
+		}), health.WithChecks(
+			health.Config{
+				Name:      "postgres",
+				Timeout:   time.Second * 10,
+				SkipOnErr: false,
+				Check: healthPg.New(healthPg.Config{
+					DSN: os.Getenv("DB_SOURCE"),
+				}),
+			},
+		))
+
+		// Register health check endpoint
+		h.HTTP.Get("/status", healthHandler.HandlerFunc)
+
+		return nil
+	}
+}
