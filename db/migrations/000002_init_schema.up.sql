@@ -4,7 +4,7 @@ CREATE TABLE "projects" (
   "description" text NOT NULL,
   "start_date" timestamp NOT NULL,
   "end_date" timestamp NOT NULL,
-  "manager_id" bigserial NOT NULL
+  "manager_id" BIGINT NOT NULL  -- Change from BIGSERIAL to BIGINT
 );
 
 CREATE TABLE "tasks" (
@@ -13,20 +13,16 @@ CREATE TABLE "tasks" (
   "description" text NOT NULL,
   "priority" task_priority NOT NULL,
   "status" task_status NOT NULL,
-  "assignee_id" bigserial NOT NULL,
-  "project_id" bigserial NOT NULL,
+  "assignee_id" BIGINT NOT NULL,  -- Change from BIGSERIAL to BIGINT
+  "project_id" BIGINT NOT NULL,    -- Change from BIGSERIAL to BIGINT
   "creation_date" timestamp NOT NULL DEFAULT (now()),
   "completion_date" timestamp
 );
 
 CREATE INDEX ON "projects" ("manager_id");
-
 CREATE INDEX ON "tasks" ("assignee_id");
-
 CREATE INDEX ON "tasks" ("project_id");
 
 ALTER TABLE "projects" ADD FOREIGN KEY ("manager_id") REFERENCES "users" ("id");
-
 ALTER TABLE "tasks" ADD FOREIGN KEY ("assignee_id") REFERENCES "users" ("id");
-
 ALTER TABLE "tasks" ADD FOREIGN KEY ("project_id") REFERENCES "projects" ("id");

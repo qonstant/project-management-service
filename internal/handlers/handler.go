@@ -4,11 +4,11 @@ import (
 	"database/sql"
 	"os"
 	"time"
+
 	"github.com/go-chi/chi/v5"
-	_ "github.com/go-chi/chi/v5/middleware"
-	httpSwagger "github.com/swaggo/http-swagger"
 	"github.com/hellofresh/health-go/v5"
 	healthPg "github.com/hellofresh/health-go/v5/checks/postgres"
+	httpSwagger "github.com/swaggo/http-swagger"
 
 	"project-management-service/docs"
 	"project-management-service/internal/config"
