@@ -25,14 +25,13 @@ func TestCreateUser(t *testing.T) {
 		AddRow(1, "Test User", "test@example.com", now, "user")
 
 	mock.ExpectQuery("INSERT INTO users").
-		WithArgs("Test User", "test@example.com", now, "user").
+		WithArgs("Test User", "test@example.com", "user").
 		WillReturnRows(rows)
 
 	params := CreateUserParams{
-		FullName:         "Test User",
-		Email:            "test@example.com",
-		RegistrationDate: now,
-		Role:             "user",
+		FullName: "Test User",
+		Email:    "test@example.com",
+		Role:     "user",
 	}
 
 	user, err := queries.CreateUser(context.Background(), params)

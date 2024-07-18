@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"project-management-service/db/sqlc"
@@ -37,6 +38,14 @@ func (h *ProjectHandler) Routes() chi.Router {
 	return r
 }
 
+type createProjectRequest struct {
+	Description string `json:"description"`
+	EndDate     string `json:"end_date"`
+	ManagerID   int64  `json:"manager_id"`
+	Name        string `json:"name"`
+	StartDate   string `json:"start_date"`
+}
+
 // @Summary	List of projects from the repository
 // @Tags		projects
 // @Accept		json
@@ -57,19 +66,39 @@ func (h *ProjectHandler) list(w http.ResponseWriter, r *http.Request) {
 // @Tags		projects
 // @Accept		json
 // @Produce	json
-// @Param		request	body	db.CreateProjectParams	true	"Project details"
+// @Param		request	body	createProjectRequest	true	"Project details"
 // @Success	200		{object}	db.Project
 // @Failure	400		{object}	response.Object
 // @Failure	500		{object}	response.Object
 // @Router		/projects [post]
 func (h *ProjectHandler) add(w http.ResponseWriter, r *http.Request) {
-	var req db.CreateProjectParams
+	var req createProjectRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		response.BadRequest(w, r, err, req)
 		return
 	}
 
-	project, err := h.db.CreateProject(r.Context(), req)
+	startDate, err := time.Parse("2006-01-02", req.StartDate)
+	if err != nil {
+		response.BadRequest(w, r, err, req)
+		return
+	}
+
+	endDate, err := time.Parse("2006-01-02", req.EndDate)
+	if err != nil {
+		response.BadRequest(w, r, err, req)
+		return
+	}
+
+	params := db.CreateProjectParams{
+		Name:        req.Name,
+		Description: req.Description,
+		StartDate:   startDate,
+		EndDate:     endDate,
+		ManagerID:   req.ManagerID,
+	}
+
+	project, err := h.db.CreateProject(r.Context(), params)
 	if err != nil {
 		response.InternalServerError(w, r, err)
 		return

@@ -8,9 +8,9 @@ ORDER BY full_name ASC;
 
 -- name: CreateUser :one
 INSERT INTO users (
-    full_name, email, registration_date, role
+    full_name, email, role
 ) VALUES (
-    $1, $2, $3, $4
+    $1, $2, $3
 )
 RETURNING *;
 

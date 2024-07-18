@@ -1,4 +1,4 @@
-package handler
+package handlers
 
 import (
 	"database/sql"
@@ -72,7 +72,7 @@ func WithHTTPHandler() Configuration {
 			r.Mount("/tasks", taskHandler.Routes())
 		})
 
-		// Set up health checks
+		// Setting up health checks
 		healthHandler, _ := health.New(health.WithComponent(health.Component{
 			Name:    "project-management-service",
 			Version: "v1.0",
@@ -87,7 +87,7 @@ func WithHTTPHandler() Configuration {
 			},
 		))
 
-		// Register health check endpoint
+		// Registerring health check endpoint
 		h.HTTP.Get("/status", healthHandler.HandlerFunc)
 
 		return nil

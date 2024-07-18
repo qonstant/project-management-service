@@ -5,7 +5,7 @@
 package db
 
 import (
-	_"database/sql"
+	"database/sql"
 	"database/sql/driver"
 	"fmt"
 	"time"
@@ -115,7 +115,7 @@ type Task struct {
 	AssigneeID     int64        `json:"assignee_id"`
 	ProjectID      int64        `json:"project_id"`
 	CreationDate   time.Time    `json:"creation_date"`
-	CompletionDate NullableTime `json:"completion_date"`
+	CompletionDate sql.NullTime `json:"completion_date"`
 }
 
 type User struct {

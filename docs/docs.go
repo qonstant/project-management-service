@@ -63,7 +63,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/db.CreateProjectParams"
+                            "$ref": "#/definitions/http.createProjectRequest"
                         }
                     }
                 ],
@@ -277,7 +277,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/db.CreateTaskParams"
+                            "$ref": "#/definitions/http.createTaskRequest"
                         }
                     }
                 ],
@@ -659,29 +659,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "db.CreateProjectParams": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "end_date": {
-                    "type": "string"
-                },
-                "manager_id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "start_date": {
-                    "type": "string"
-                }
-            }
-        },
-        "db.CreateTaskParams": {
-            "type": "object"
-        },
         "db.CreateUserParams": {
             "type": "object",
             "properties": {
@@ -691,23 +668,8 @@ const docTemplate = `{
                 "full_name": {
                     "type": "string"
                 },
-                "registration_date": {
-                    "type": "string"
-                },
                 "role": {
                     "type": "string"
-                }
-            }
-        },
-        "db.NullableTime": {
-            "type": "object",
-            "properties": {
-                "time": {
-                    "type": "string"
-                },
-                "valid": {
-                    "description": "Valid is true if Time is not NULL",
-                    "type": "boolean"
                 }
             }
         },
@@ -741,7 +703,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "completion_date": {
-                    "$ref": "#/definitions/db.NullableTime"
+                    "$ref": "#/definitions/sql.NullTime"
                 },
                 "creation_date": {
                     "type": "string"
@@ -816,7 +778,33 @@ const docTemplate = `{
             }
         },
         "db.UpdateTaskParams": {
-            "type": "object"
+            "type": "object",
+            "properties": {
+                "assignee_id": {
+                    "type": "integer"
+                },
+                "completion_date": {
+                    "$ref": "#/definitions/sql.NullTime"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "priority": {
+                    "$ref": "#/definitions/db.TaskPriority"
+                },
+                "project_id": {
+                    "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/db.TaskStatus"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
         },
         "db.UpdateUserParams": {
             "type": "object",
@@ -858,6 +846,63 @@ const docTemplate = `{
                 }
             }
         },
+        "http.NullableTime": {
+            "type": "object",
+            "properties": {
+                "time": {
+                    "type": "string"
+                },
+                "valid": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "http.createProjectRequest": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "end_date": {
+                    "type": "string"
+                },
+                "manager_id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "start_date": {
+                    "type": "string"
+                }
+            }
+        },
+        "http.createTaskRequest": {
+            "type": "object",
+            "properties": {
+                "assignee_id": {
+                    "type": "integer"
+                },
+                "completion_date": {
+                    "$ref": "#/definitions/http.NullableTime"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "priority": {
+                    "type": "string"
+                },
+                "project_id": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
         "response.Object": {
             "type": "object",
             "properties": {
@@ -866,6 +911,18 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "sql.NullTime": {
+            "type": "object",
+            "properties": {
+                "time": {
+                    "type": "string"
+                },
+                "valid": {
+                    "description": "Valid is true if Time is not NULL",
                     "type": "boolean"
                 }
             }
@@ -883,6 +940,8 @@ var SwaggerInfo = &swag.Spec{
 	Description:      "",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
+	// LeftDelim:        "{{",
+	// RightDelim:       "}}",
 }
 
 func init() {

@@ -8,14 +8,13 @@ package db
 import (
 	"context"
 	"database/sql"
-	"time"
 )
 
 const createTask = `-- name: CreateTask :one
 INSERT INTO tasks (
-    title, description, priority, status, assignee_id, project_id, creation_date, completion_date
+    title, description, priority, status, assignee_id, project_id, completion_date
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8
+    $1, $2, $3, $4, $5, $6, $7
 )
 RETURNING id, title, description, priority, status, assignee_id, project_id, creation_date, completion_date
 `
@@ -27,7 +26,6 @@ type CreateTaskParams struct {
 	Status         TaskStatus   `json:"status"`
 	AssigneeID     int64        `json:"assignee_id"`
 	ProjectID      int64        `json:"project_id"`
-	CreationDate   time.Time    `json:"creation_date"`
 	CompletionDate sql.NullTime `json:"completion_date"`
 }
 
@@ -39,7 +37,6 @@ func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (Task, e
 		arg.Status,
 		arg.AssigneeID,
 		arg.ProjectID,
-		arg.CreationDate,
 		arg.CompletionDate,
 	)
 	var i Task
@@ -331,8 +328,7 @@ SET
     status = $5,
     assignee_id = $6,
     project_id = $7,
-    creation_date = $8,
-    completion_date = $9
+    completion_date = $8
 WHERE id = $1
 RETURNING id, title, description, priority, status, assignee_id, project_id, creation_date, completion_date
 `
@@ -345,7 +341,6 @@ type UpdateTaskParams struct {
 	Status         TaskStatus   `json:"status"`
 	AssigneeID     int64        `json:"assignee_id"`
 	ProjectID      int64        `json:"project_id"`
-	CreationDate   time.Time    `json:"creation_date"`
 	CompletionDate sql.NullTime `json:"completion_date"`
 }
 
@@ -358,7 +353,6 @@ func (q *Queries) UpdateTask(ctx context.Context, arg UpdateTaskParams) (Task, e
 		arg.Status,
 		arg.AssigneeID,
 		arg.ProjectID,
-		arg.CreationDate,
 		arg.CompletionDate,
 	)
 	var i Task

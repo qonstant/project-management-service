@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"project-management-service/db/sqlc"
@@ -37,6 +38,63 @@ func (h *TaskHandler) Routes() chi.Router {
 	return r
 }
 
+type NullableTime struct {
+	Time  time.Time
+	Valid bool
+}
+
+func (nt *NullableTime) UnmarshalJSON(data []byte) error {
+	var aux interface{}
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+
+	switch v := aux.(type) {
+	case string:
+		if v == "" {
+			nt.Valid = false
+			return nil
+		}
+		t, err := time.Parse("2006-01-02", v)
+		if err != nil {
+			return err
+		}
+		nt.Time = t
+		nt.Valid = true
+	case map[string]interface{}:
+		if v["time"] == nil {
+			nt.Valid = false
+			return nil
+		}
+		timeStr, ok := v["time"].(string)
+		if !ok {
+			return errors.New("invalid format for NullableTime")
+		}
+		t, err := time.Parse("2006-01-02", timeStr)
+		if err != nil {
+			return err
+		}
+		nt.Time = t
+		nt.Valid = v["valid"].(bool)
+	case nil:
+		nt.Valid = false
+	default:
+		return errors.New("invalid format for NullableTime")
+	}
+
+	return nil
+}
+
+type createTaskRequest struct {
+	Title          string       `json:"title"`
+	Description    string       `json:"description"`
+	Priority       string       `json:"priority"`
+	Status         string       `json:"status"`
+	AssigneeID     int64        `json:"assignee_id"`
+	ProjectID      int64        `json:"project_id"`
+	CompletionDate NullableTime `json:"completion_date"`
+}
+
 // @Summary	List of tasks from the repository
 // @Tags		tasks
 // @Accept		json
@@ -57,19 +115,29 @@ func (h *TaskHandler) list(w http.ResponseWriter, r *http.Request) {
 // @Tags		tasks
 // @Accept		json
 // @Produce	json
-// @Param		request	body		db.CreateTaskParams	true	"Task details"
+// @Param		request	body	createTaskRequest	true	"Task details"
 // @Success	200		{object}	db.Task
 // @Failure	400		{object}	response.Object
 // @Failure	500		{object}	response.Object
 // @Router		/tasks [post]
 func (h *TaskHandler) add(w http.ResponseWriter, r *http.Request) {
-	var req db.CreateTaskParams
+	var req createTaskRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		response.BadRequest(w, r, err, req)
 		return
 	}
 
-	task, err := h.db.CreateTask(r.Context(), req)
+	params := db.CreateTaskParams{
+		Title:         req.Title,
+		Description:   req.Description,
+		Priority:      db.TaskPriority(req.Priority),
+		Status:        db.TaskStatus(req.Status),
+		AssigneeID:    req.AssigneeID,
+		ProjectID:     req.ProjectID,
+		CompletionDate: sql.NullTime{Time: req.CompletionDate.Time, Valid: req.CompletionDate.Valid},
+	}
+
+	task, err := h.db.CreateTask(r.Context(), params)
 	if err != nil {
 		response.InternalServerError(w, r, err)
 		return

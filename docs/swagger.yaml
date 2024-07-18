@@ -1,37 +1,12 @@
 definitions:
-  db.CreateProjectParams:
-    properties:
-      description:
-        type: string
-      end_date:
-        type: string
-      manager_id:
-        type: integer
-      name:
-        type: string
-      start_date:
-        type: string
-    type: object
-  db.CreateTaskParams:
-    type: object
   db.CreateUserParams:
     properties:
       email:
         type: string
       full_name:
         type: string
-      registration_date:
-        type: string
       role:
         type: string
-    type: object
-  db.NullableTime:
-    properties:
-      time:
-        type: string
-      valid:
-        description: Valid is true if Time is not NULL
-        type: boolean
     type: object
   db.Project:
     properties:
@@ -53,7 +28,7 @@ definitions:
       assignee_id:
         type: integer
       completion_date:
-        $ref: '#/definitions/db.NullableTime'
+        $ref: '#/definitions/sql.NullTime'
       creation_date:
         type: string
       description:
@@ -105,6 +80,23 @@ definitions:
         type: string
     type: object
   db.UpdateTaskParams:
+    properties:
+      assignee_id:
+        type: integer
+      completion_date:
+        $ref: '#/definitions/sql.NullTime'
+      description:
+        type: string
+      id:
+        type: integer
+      priority:
+        $ref: '#/definitions/db.TaskPriority'
+      project_id:
+        type: integer
+      status:
+        $ref: '#/definitions/db.TaskStatus'
+      title:
+        type: string
     type: object
   db.UpdateUserParams:
     properties:
@@ -132,12 +124,57 @@ definitions:
       role:
         type: string
     type: object
+  http.NullableTime:
+    properties:
+      time:
+        type: string
+      valid:
+        type: boolean
+    type: object
+  http.createProjectRequest:
+    properties:
+      description:
+        type: string
+      end_date:
+        type: string
+      manager_id:
+        type: integer
+      name:
+        type: string
+      start_date:
+        type: string
+    type: object
+  http.createTaskRequest:
+    properties:
+      assignee_id:
+        type: integer
+      completion_date:
+        $ref: '#/definitions/http.NullableTime'
+      description:
+        type: string
+      priority:
+        type: string
+      project_id:
+        type: integer
+      status:
+        type: string
+      title:
+        type: string
+    type: object
   response.Object:
     properties:
       data: {}
       message:
         type: string
       success:
+        type: boolean
+    type: object
+  sql.NullTime:
+    properties:
+      time:
+        type: string
+      valid:
+        description: Valid is true if Time is not NULL
         type: boolean
     type: object
 info:
@@ -172,7 +209,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/db.CreateProjectParams'
+          $ref: '#/definitions/http.createProjectRequest'
       produces:
       - application/json
       responses:
@@ -312,7 +349,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/db.CreateTaskParams'
+          $ref: '#/definitions/http.createTaskRequest'
       produces:
       - application/json
       responses:

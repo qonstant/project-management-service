@@ -1,44 +1,85 @@
 package app
 
 import (
-	"log"
-	"net/http"
+	"context"
+	"flag"
+	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
+	"go.uber.org/zap"
+
 	"project-management-service/internal/config"
 	"project-management-service/internal/database"
 	"project-management-service/internal/handlers"
+	"project-management-service/pkg/log"
+	"project-management-service/pkg/server"
 )
 
+// Run initializes the whole application
 func Run() {
-	// Load configuration
+	logger := log.LoggerFromContext(context.Background())
+
 	configs, err := config.LoadConfig(".")
 	if err != nil {
-		log.Fatalf("Error loading config: %v", err)
+		logger.Error("ERR_INIT_CONFIGS", zap.Error(err))
+		return
 	}
 
-	// Initialize the database
 	database.InitDB()
 
-	// Set up dependencies
-	deps := handler.Dependencies{
-		DB:      database.DB,
-		Configs: configs,
-	}
-
-	// Initialize the handler
-	h, err := handler.New(deps, handler.WithHTTPHandler())
+	handlers, err := handlers.New(
+		handlers.Dependencies{
+			DB:      database.DB,
+			Configs: configs,
+		},
+		handlers.WithHTTPHandler())
 	if err != nil {
-		log.Fatalf("Error initializing handlers: %v", err)
+		logger.Error("ERR_INIT_HANDLERS", zap.Error(err))
+		return
 	}
 
-	// Get port from environment or default to 8080
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
+	servers, err := server.New(
+		server.WithHTTPServer(handlers.HTTP, configs.ServerAddress))
+	if err != nil {
+		logger.Error("ERR_INIT_SERVERS", zap.Error(err))
+		return
 	}
 
-	log.Printf("Starting server on port %s...", port)
-	if err := http.ListenAndServe(":"+port, h.HTTP); err != nil {
-		log.Fatalf("Error starting server: %v", err)
+	// Run our server in a goroutine so that it doesn't block
+	if err = servers.Run(logger); err != nil {
+		logger.Error("ERR_RUN_SERVERS", zap.Error(err))
+		return
 	}
+	logger.Info("http server started on http://localhost" + configs.ServerAddress + "/swagger/index.html")
+
+	// Graceful Shutdown
+	var wait time.Duration
+	flag.DurationVar(&wait, "graceful-timeout", time.Second*15, "the duration for which the httpServer gracefully wait for existing connections to finish - e.g. 15s or 1m")
+	flag.Parse()
+
+	quit := make(chan os.Signal, 1) // Create channel to signify a signal being sent
+
+	// We'll accept graceful shutdowns when quit via SIGINT (Ctrl+C)
+	// SIGKILL, SIGQUIT or SIGTERM (Ctrl+/) will not be caught
+
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM) // When an interrupt or termination signal is sent, notify the channel
+	<-quit                                             // This blocks the main thread until an interrupt is received
+	fmt.Println("gracefully shutting down...")
+
+	// Create a deadline to wait for
+	ctx, cancel := context.WithTimeout(context.Background(), wait)
+	defer cancel()
+
+	// Doesn't block if no connections, but will otherwise wait until the timeout deadline
+	if err = servers.Stop(ctx); err != nil {
+		panic(err) // failure/timeout shutting down the httpServer gracefully
+	}
+
+	fmt.Println("running cleanup tasks...")
+	// Your cleanup tasks go here
+
+	fmt.Println("server was successfully shutdown.")
 }

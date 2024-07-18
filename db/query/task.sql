@@ -8,9 +8,9 @@ ORDER BY creation_date ASC;
 
 -- name: CreateTask :one
 INSERT INTO tasks (
-    title, description, priority, status, assignee_id, project_id, creation_date, completion_date
+    title, description, priority, status, assignee_id, project_id, completion_date
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8
+    $1, $2, $3, $4, $5, $6, $7
 )
 RETURNING *;
 
@@ -23,8 +23,7 @@ SET
     status = $5,
     assignee_id = $6,
     project_id = $7,
-    creation_date = $8,
-    completion_date = $9
+    completion_date = $8
 WHERE id = $1
 RETURNING *;
 

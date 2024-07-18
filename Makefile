@@ -47,7 +47,8 @@ coverfile:
 	go tool cover -html="c.out"
 
 swagger:
-	swag init -g internal/handlers/http/task.go
+	# swag init -g internal/handlers/http/task.go
+	swag init --parseDependency github.com/volatiletech/null/v8
 
 tests:
 	go test -v ./...
