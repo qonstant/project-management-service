@@ -28,11 +28,13 @@ func (h *ProjectHandler) Routes() chi.Router {
 
 	r.Get("/", h.list)
 	r.Post("/", h.add)
+	r.Get("/search", h.search)
 
 	r.Route("/{id}", func(r chi.Router) {
 		r.Get("/", h.get)
 		r.Put("/", h.update)
 		r.Delete("/", h.delete)
+		r.Get("/tasks", h.getTasks)
 	})
 
 	return r
@@ -201,4 +203,72 @@ func (h *ProjectHandler) delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response.NoContent(w, r)
+}
+
+// @Summary	Get tasks for a project
+// @Tags		projects
+// @Accept		json
+// @Produce	json
+// @Param		id	path		int	true	"Project ID"
+// @Success	200	{array}		db.Task
+// @Failure	404	{object}	response.Object
+// @Failure	500	{object}	response.Object
+// @Router		/projects/{id}/tasks [get]
+func (h *ProjectHandler) getTasks(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+	if err != nil {
+		response.BadRequest(w, r, err, nil)
+		return
+	}
+
+	tasks, err := h.db.GetProjectTasks(r.Context(), id)
+	if err != nil {
+		response.InternalServerError(w, r, err)
+		return
+	}
+
+	response.OK(w, r, tasks)
+}
+
+// @Summary	Search projects by title or manager ID
+// @Tags		projects
+// @Accept		json
+// @Produce	json
+// @Param		title		query	string	false	"Project title"
+// @Param		manager		query	int		false	"Manager ID"
+// @Success	200	{array}		db.Project
+// @Failure	400	{object}	response.Object
+// @Failure	500	{object}	response.Object
+// @Router		/projects/search [get]
+func (h *ProjectHandler) search(w http.ResponseWriter, r *http.Request) {
+	title := r.URL.Query().Get("title")
+	managerIDStr := r.URL.Query().Get("manager")
+	
+	if title != "" {
+		projects, err := h.db.SearchProjectsByTitle(r.Context(), sql.NullString{String: title, Valid: true})
+		if err != nil {
+			response.InternalServerError(w, r, err)
+			return
+		}
+		response.OK(w, r, projects)
+		return
+	}
+
+	if managerIDStr != "" {
+		managerID, err := strconv.ParseInt(managerIDStr, 10, 64)
+		if err != nil {
+			response.BadRequest(w, r, err, nil)
+			return
+		}
+
+		projects, err := h.db.SearchProjectsByManager(r.Context(), managerID)
+		if err != nil {
+			response.InternalServerError(w, r, err)
+			return
+		}
+		response.OK(w, r, projects)
+		return
+	}
+
+	response.BadRequest(w, r, errors.New("missing search criteria"), nil)
 }

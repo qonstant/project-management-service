@@ -27,11 +27,13 @@ func (h *UserHandler) Routes() chi.Router {
 
 	r.Get("/", h.list)
 	r.Post("/", h.add)
+	r.Get("/search", h.search)
 
 	r.Route("/{id}", func(r chi.Router) {
 		r.Get("/", h.get)
 		r.Put("/", h.update)
 		r.Delete("/", h.delete)
+		r.Get("/tasks", h.getTasks)
 	})
 
 	return r
@@ -116,7 +118,7 @@ func (h *UserHandler) get(w http.ResponseWriter, r *http.Request) {
 // @Success	200		{object}	db.User
 // @Failure	400		{object}	response.Object
 // @Failure	404		{object}	response.Object
-// @Failure	500		{object}	response.Object
+// @Failure	500	{object}	response.Object
 // @Router		/users/{id} [put]
 func (h *UserHandler) update(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
@@ -172,4 +174,63 @@ func (h *UserHandler) delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response.NoContent(w, r)
+}
+
+// @Summary	Get tasks for a specific user
+// @Tags		users
+// @Accept		json
+// @Produce	json
+// @Param		id	path		int	true	"User ID"
+// @Success	200	{array}		db.Task
+// @Failure	404	{object}	response.Object
+// @Failure	500	{object}	response.Object
+// @Router		/users/{id}/tasks [get]
+func (h *UserHandler) getTasks(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+	if err != nil {
+		response.BadRequest(w, r, err, nil)
+		return
+	}
+
+	tasks, err := h.db.GetUserTasks(r.Context(), id)
+	if err != nil {
+		response.InternalServerError(w, r, err)
+		return
+	}
+
+	response.OK(w, r, tasks)
+}
+
+// @Summary	Search users by name or email
+// @Tags		users
+// @Accept		json
+// @Produce	json
+// @Param		name	query		string	false	"User name"
+// @Param		email	query		string	false	"User email"
+// @Success	200	{array}		db.User
+// @Failure	500	{object}	response.Object
+// @Router		/users/search [get]
+func (h *UserHandler) search(w http.ResponseWriter, r *http.Request) {
+	name := r.URL.Query().Get("name")
+	email := r.URL.Query().Get("email")
+
+	var users []db.User
+	var err error
+
+	switch {
+	case name != "":
+		users, err = h.db.SearchUsersByName(r.Context(), sql.NullString{String: name, Valid: true})
+	case email != "":
+		users, err = h.db.SearchUsersByEmail(r.Context(), sql.NullString{String: email, Valid: true})
+	default:
+		response.BadRequest(w, r, errors.New("missing query parameter"), nil)
+		return
+	}
+
+	if err != nil {
+		response.InternalServerError(w, r, err)
+		return
+	}
+
+	response.OK(w, r, users)
 }
