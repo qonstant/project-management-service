@@ -7,7 +7,7 @@ Creating a RESTful API for a Project Management service. The service is deployed
 ## Features
 - **Database was created by using dbdiagram.**
 
-![alt text](https://raw.githubusercontent.com/qonstant/project-management-service/main/DBdiagram.png)
+![alt text](https://raw.githubusercontent.com/qonstant/project-management-service/main/diagram.png)
 
 - **CRUD operations for managing tasks.**
   - CRUD was created using SQLC. For regeneration of CRUD:
